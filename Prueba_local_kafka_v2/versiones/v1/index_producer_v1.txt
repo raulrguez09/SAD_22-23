@@ -1,0 +1,39 @@
+import Kafka from 'node-rdkafka'
+import eventType from '../eventType.js';
+import fs from 'fs/promises'
+import express from 'express'
+import _ from 'lodash'
+import { v4 as uuidv4 } from 'uuid';
+
+console.log("Producer...")
+const app = express();
+app.use(express.json());
+
+const stream = Kafka.Producer.createWriteStream({
+    'metadata.broker.list': 'localhost:9092'
+  }, {}, { topic: 'test' });
+
+
+function queueMessage(ID, URL) {
+	const event = { ID: ID, URL: URL }
+    const success = stream.write(eventType.toBuffer(event))
+    //const success = stream.write(Buffer.from('hi pepi'))
+    if (success){
+        console.log('Message wrote successfully to the stream...')
+    }else{
+        console.log('Something went wrong with the write stream...')
+    }
+}
+
+app.get("/:id", async (req, res) => {
+	const ID = uuidv4()
+    const URL = req.params.id;
+    queueMessage(ID, URL)
+
+	res.json({
+		id: ID,
+        url: URL
+	});
+});
+
+app.listen(3000, () => console.log("API Server is running..."));

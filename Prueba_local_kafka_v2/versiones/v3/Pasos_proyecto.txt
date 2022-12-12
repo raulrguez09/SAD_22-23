@@ -1,0 +1,46 @@
+1. Descargar docker-compose de kafka y zookeper
+
+2. Hacer docker-compose up (version de docker -> 20.10.12, docker-compose -> 1.25.0-1, python3 -> 3.8.10)
+    - https://stackoverflow.com/questions/47223280/docker-containers-can-not-be-stopped-or-removed-permission-denied-error
+
+3. Crear el topic de la cola kafka:
+    # Crear topic
+    docker exec -it kafka /opt/kafka/bin/kafka-topics.sh \
+        --create \
+        --bootstrap-server localhost:9092 \
+        --replication-factor 1 \
+        --partitions 1 \
+        --topic test
+
+    # Litar los topic existentes
+    docker exec -it kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+    
+    # ver mensajes en el topic
+    docker exec -it kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
+    
+    # Elimintar topic
+    docker exec -it kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic "nombre_topic"
+
+4. Iniciar el entorno de node
+    $ npm init -y
+
+5. Crear carpetas de productor y consumidor, y añadir un fichero index.js a cada uno
+
+6. Modificar los scripts del archivo package.json
+    "scripts": {
+        "start:producer": "node ./producer/index.js",
+        "start:consumer": "node ./consumer/index.js"
+    },
+
+7. Probamos los scripts
+    $ npm run start:producer
+    $ npm run start:consumer
+
+8. Instalamos las librerias necesarias
+    $ npm i node-rdkafka --save
+    https://github.com/Blizzard/node-rdkafka
+    $ npm i avsc --save
+
+9. Añadir en package.json la siguiente linea si queremos otros imports
+    "type": "module",
+

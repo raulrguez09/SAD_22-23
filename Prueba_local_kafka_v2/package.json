@@ -1,0 +1,21 @@
+{
+  "name": "proyecto_sad",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start:producer": "node ./producer/index.js",
+    "start:consumer": "node ./consumer/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "avsc": "^5.7.7",
+    "express": "^4.18.2",
+    "lodash": "^4.17.21",
+    "node-rdkafka": "^2.14.0",
+    "uuid": "^9.0.0"
+  }
+}
