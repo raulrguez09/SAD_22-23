@@ -166,21 +166,22 @@ consumer.on('ready', () => {
             // Comprobamos si el archivo está vacio
             let isEmpty = await isFileEmpty('./existeRepo.txt')
             shell.exec("rm -rf existeRepo.txt")
+
             // Si esta vacio, el repositorio no existe
             if(isEmpty === true){
                 jobResult = ` repository https://github.com/${repoPath}.git not found`
                 throw new Error(jobResult)
             }else{
                 // Si NO esta vacio, continuamos nuestra labor clonando el repositorio
-                shell.exec(`git clone "https://raulrguez09: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@github.com/${repoPath}.git"`)
+                shell.exec(`git clone "https://raulrguez09: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@github.com/${repoPath}.git"`)
 
                 // Comprobamos que existan los archivos dentro del repositorio clonado
                 var errorCheckFiles = ""
                 for(var i = 0; i < filesPath.length; i++){
                     if(filesPath[i]){
-                        var exist = await checkFileExists("ejemploWorker_SAD/factorial.py")
+                        var exist = await checkFileExists(filesPath[i])
                         if (!exist){
-                            var pathError = `${filesPath[i]} `
+                            var pathError = `${filesPath[i]}`
                             errorCheckFiles = errorCheckFiles + pathError
                         }
                     }
@@ -188,7 +189,7 @@ consumer.on('ready', () => {
 
                 // Si la variable no está vacía, significa que algún archivo no existe
                 if(errorCheckFiles != ""){
-                    jobResult = errorCheckFiles + `not found in repository https://github.com/${repoPath}.git`
+                    jobResult = errorCheckFiles + ` not found in repository https://github.com/${repoPath}.git`
                     throw new Error(jobResult)
                 }
 
@@ -212,13 +213,12 @@ consumer.on('ready', () => {
 
                 // Ejecutamos el EXEC_FILE (con los parametros si existen)
                 if(filesPath[1]){
-                    console.log(`python3 ${filesPath[1]} ${paramFile} >> result.txt`)
-                    var child2 = shell.exec(`python3 ${filesPath[1]} ${paramFile} >> result.txt`)
+                    var child2 = shell.exec(`python3 ${filesPath[1]} ${paramFile}`)
                     if(child2.code !== 0){
-                        jobResult = `Error: error in the execution of the file: ${filesPath[1]} \n` + child.stderr
+                        jobResult = `Error: error in the execution of the file: ${filesPath[1]} \n` + child2.stderr
                         throw new Error(jobResult)
                     }
-                    jobResult = await readFile("result.txt")
+                    jobResult = child2.stdout
                 }
 
                 // Una vez ejecutamos el trabajo, desinstalamos las dependencias
@@ -234,7 +234,6 @@ consumer.on('ready', () => {
     }
     
     //Terminada la ejecución, borramos los archivos no necesarios
-    shell.exec('rm -rf result.txt')
     shell.exec(`rm -rf ${git_repo}`)
     
     // Finalmente enviamos el trabajo con el resultado obtenido
