@@ -12,11 +12,25 @@
 console.log("Starting producer...") 
 const Kafka = require('node-rdkafka')
 const express = require('express')
+const session = require('express-session')
+const jwt_decode = require('jwt-decode')
 
 // Iniciamos un servidor con el uso del framework express
 const app = express();
 app.use(express.json());
 
+// Almacenamos la informacion de la session de keycloak
+const memoryStore = new session.MemoryStore();
+
+app.use(session({
+	secret: 'some secret',
+	resave: false,
+	saveUninitialized: true,
+	store: memoryStore
+}));
+
+// Cargamos la configuración de Keycloak
+let keycloak = require('./keycloak_config.js').initKeycloak(memoryStore)
 
 // Creamos las variables globales necesarias
 let jobs = new Map()
@@ -138,6 +152,22 @@ function checkPrevJobs(USERNAME){
 
 
 //---------------------------------------------------------------------//
+// Function name: getDecodedToken                                      //
+// Params: Token - access token de keycloak                            //
+// Definition: Funcion que permite permite descodificar, verificar     //
+//             y generar un token web JSON, a partir del access token  //
+//             generado por Keycloak                                   //
+// Return: Devuelve un token web JSON con toda la informacion          //
+//         decodificada del access token                               //
+//---------------------------------------------------------------------//
+function getDecodedToken(token){
+    var rawToken = token.toString().split(" ")
+    var decodedToken = jwt_decode(rawToken[1], { payload: true });
+    return decodedToken
+}
+
+
+//---------------------------------------------------------------------//
 // Function name: API function - /sendJob                              //
 // Type: POST                                                          //
 // Definition: Función que comprueba la autenticación del usuario,     //
@@ -148,9 +178,11 @@ function checkPrevJobs(USERNAME){
 //         pendientes, se enviaria su informacion junto con sus        //
 //         resultados                                                  //
 //---------------------------------------------------------------------//
-app.post("/sendJob/", async (req, res) => {
+app.post("/sendJob/", keycloak.protect(process.env.KEYCLOAK_ROLE), async (req, res) => {
 	// Deserializamos el token, y obtenemos los datos del usuario
-	const USERNAME = "Pepe"
+	var TOKEN = getDecodedToken(req.headers.authorization)
+	const USERNAME = TOKEN.preferred_username
+    var EMAIL = TOKEN.email
 
 	// Comprobamos que hayan res de trabajos previos sin leer
 	var resultPrevJob = checkPrevJobs(USERNAME)
@@ -210,7 +242,7 @@ app.post("/sendJob/", async (req, res) => {
 //         el estado asociado en ese momento, este puede ser: En cola, //
 //         En proceso, Finalizado, o con el resultado del trabajo      //
 //---------------------------------------------------------------------//
-app.get("/status/:idJob",  async (req, res) => {
+app.get("/status/:idJob", keycloak.protect(process.env.KEYCLOAK_ROLE),  async (req, res) => {
 	const ID = req.params.idJob
 	if(jobsStatus.get(ID)){
 		return res.status(201).json({
@@ -239,7 +271,7 @@ app.get("/status/:idJob",  async (req, res) => {
 // Return: Devuelve en formato JSON el ID del trabajo con el           //
 //         resultado del mismo                                         //
 //---------------------------------------------------------------------//
-app.get("/result/:idJob", async (req, res) => {
+app.get("/result/:idJob", keycloak.protect(process.env.KEYCLOAK_ROLE), async (req, res) => {
 	const ID = req.params.idJob
 	var result = jobsStatus.get(ID)
 
@@ -265,8 +297,9 @@ app.get("/result/:idJob", async (req, res) => {
 // Return: Devuelve en formato JSON un listado de los trabajos         //
 //         enviados por el usuario actual                              //
 //---------------------------------------------------------------------//
-app.get("/showSendJobs/USERNAME", async (req, res) => {
-	const USERNAME = req.params.USERNAME
+app.get("/showSendJobs", keycloak.protect(process.env.KEYCLOAK_ROLE), async (req, res) => {
+	var TOKEN = getDecodedToken(req.headers.authorization)
+	const USERNAME = TOKEN.preferred_username
 	allJobs = jobs.get(USERNAME)
 	if (!alljobs) {
 		return res.sendStatus(400);

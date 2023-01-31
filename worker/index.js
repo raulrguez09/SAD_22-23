@@ -156,7 +156,8 @@ consumer.on('ready', () => {
     const git_repo = event.JOB_INFO.GIT_REPO_NAME
     const repoPath = `${git_user}/${git_repo}`
     const filesPath = [event.JOB_INFO.DEPENDENCE_FILE_PATH, event.JOB_INFO.EXEC_FILE_PATH, event.JOB_INFO.PARAMS_FILE_PATH]
-    const PERSONAL_ACCESS_TOKEN = conf.getPersonalAccessToken()
+    // Añadimos nuestro token personal de github para porder hacer uso de git
+    PERSONAL_ACCESS_TOKEN = conf.getPersonalAccessToken()
     let jobResult = ""
     let paramFile = ""
 

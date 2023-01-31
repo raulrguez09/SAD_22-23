@@ -1,5 +1,8 @@
 version: '3'
 
+volumes:
+  postgres_data:
+      driver: local
 services:
   zookeeper:
     image: wurstmeister/zookeeper
@@ -21,19 +24,47 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_CFG_LISTENERS: PLAINTEX://:9092
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-  
   frontend:
-    image: raulrguez09/producer_sad_v3
+    image: raulrguez09/producer_sad_v4
     ports:
     - "3000:3000"
     depends_on:
       - kafka
     environment:
       KAFKA_BROKER_SERVER: kafka:9092
-  
+      KEYCLOAK_BROKER: http://localhost:8080/
+      KEYCLOAK_REALM: kafkaRealm
+      KEYCLOAK_CLIENTID: kafkaClientID
+      KEYCLOAK_ROLE: kafkaClient
+      KEYCLOAK_SECRET_KEY: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0UNK25Jj83nFwABvEEX7tjq++7nAksCn/+DeryIMWQnN9lGCkPi6Lj+k9AK20z0PTczx/f24Y4Xwu8yaDVK9/9qG2D5kFGVueuy+vYrtvxOA/nxNA/anrDBFPGOVxwEzQjcMO2N+/jsxE3H6ZOgayJebaXMFIq2IlD5VUH3TObF3NJvwRAZhO0Ihjy9w6PcrFDuz2xqramOekrwtWwXxwN79tiSGeVPYvsjqkMrgD6Udn0LbjWvf3A6qeCpsWTII7kRkf1jBClImopFyWYTs1EqtuCmYTlYVbN+I923HCC2l1em4J4AclDS57NN0wU2698/ad2oZ+5eNUxxX2d51GwIDAQAB
   worker:
-    image: raulrguez09/worker_sad_v3
+    image: raulrguez09/worker_sad_v4
     depends_on:
       - kafka
     environment:
       KAFKA_BROKER_SERVER: kafka:9092
+      KEYCLOAK_CLIENTID: kafkaClientID
+  postgres:
+      image: postgres
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      environment:
+        POSTGRES_DB: keycloak
+        POSTGRES_USER: keycloak
+        POSTGRES_PASSWORD: password
+  keycloak:
+      image: quay.io/keycloak/keycloak:20.0.3
+      environment:
+        DB_VENDOR: POSTGRES
+        DB_ADDR: postgres
+        DB_DATABASE: keycloak
+        DB_USER: keycloak
+        DB_SCHEMA: public
+        DB_PASSWORD: password
+        KEYCLOAK_ADMIN: ADMIN
+        KEYCLOAK_ADMIN_PASSWORD: 1234
+      ports:
+        - 8080:8080
+      depends_on:
+        - postgres
+      command: start-dev
