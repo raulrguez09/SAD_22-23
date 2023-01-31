@@ -23,7 +23,7 @@ services:
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
   
   frontend:
-    image: raulrguez09/producer_sad
+    image: raulrguez09/producer_sad_v3
     ports:
     - "3000:3000"
     depends_on:
@@ -32,7 +32,7 @@ services:
       KAFKA_BROKER_SERVER: kafka:9092
   
   worker:
-    image: raulrguez09/worker_sad
+    image: raulrguez09/worker_sad_v3
     depends_on:
       - kafka
     environment:
