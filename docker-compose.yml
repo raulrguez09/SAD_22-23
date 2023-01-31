@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "jobQueue:1:1, jobStatus:1:1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_TOPIC_METADATA_REFRESH_INTERVAL_MS: "60000"
+      ALLOW_PLAINTEXT_LISTER: "yes"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENERS: PLAINTEX://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+  
+  frontend:
+    image: raulrguez09/producer_sad
+    ports:
+    - "3000:3000"
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BROKER_SERVER: kafka:9092
+  
+  worker:
+    image: raulrguez09/worker_sad
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BROKER_SERVER: kafka:9092
